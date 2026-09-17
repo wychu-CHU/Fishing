@@ -110,6 +110,19 @@
             transform: scale(0.95);
         }
 
+        /* 提示按鈕專用樣式 */
+        .btn-hint {
+            padding: 8px 18px;
+            font-size: 18px;
+            background: linear-gradient(180deg, #ffca28 0%, #ffa000 100%);
+            border-color: #ffffff;
+            margin: 0;
+        }
+
+        .btn-hint:hover {
+            background: linear-gradient(180deg, #ffd54f 0%, #ff8f00 100%);
+        }
+
         /* 設定頁面 */
         .setting-box {
             background: rgba(255, 255, 255, 0.95);
@@ -186,7 +199,14 @@
             gap: 8px;
         }
 
-        /* 計數量牌子區塊 */
+        /* 計數量牌子區塊與提示按鈕組合 */
+        .counter-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+
         .counter-card {
             position: relative;
             width: 130px;
@@ -341,6 +361,50 @@
         .swim-left .fish-img {
             transform: scaleX(-1);
         }
+
+        /* 提示彈窗樣式 */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.65);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            padding: 30px 40px;
+            border-radius: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+            border: 4px solid #ffb300;
+            max-width: 400px;
+            width: 85%;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            color: #006064;
+            margin-bottom: 15px;
+        }
+
+        .hint-word-display {
+            font-size: 58px;
+            font-weight: 900;
+            color: #e65100;
+            letter-spacing: 4px;
+            margin: 15px 0 25px 0;
+            background: #fff8e1;
+            padding: 10px 20px;
+            border-radius: 15px;
+            border: 2px dashed #ffe082;
+        }
     </style>
 </head>
 <body>
@@ -368,7 +432,6 @@
                 <input type="number" id="fish-count" value="6" min="1" max="30">
             </div>
 
-            <!-- 更新：4 個選項的下拉式選單 -->
             <div class="setting-item">
                 <label for="correct-fish-mode">正確答案魚的數量：</label>
                 <select id="correct-fish-mode">
@@ -448,18 +511,32 @@
                 <img id="feedback-wrong" src="wrong.jpg" class="feedback-icon" alt="錯誤" onerror="this.style.display='none'">
             </div>
 
-            <div class="counter-card">
-                <img src="card.jpg" alt="牌子" class="counter-img" onerror="this.style.display='none'">
-                <div class="counter-content">
-                    <div class="counter-title">抓獲答對</div>
-                    <div id="correct-count" class="counter-value">0</div>
+            <!-- 計分數牌子與提示按鈕組合區 -->
+            <div class="counter-group">
+                <div class="counter-card">
+                    <img src="card.jpg" alt="牌子" class="counter-img" onerror="this.style.display='none'">
+                    <div class="counter-content">
+                        <div class="counter-title">抓獲答對</div>
+                        <div id="correct-count" class="counter-value">0</div>
+                    </div>
                 </div>
+                <button class="btn btn-hint" onclick="openHintModal()">💡 提示</button>
             </div>
 
             <button class="btn" style="font-size: 18px; padding: 10px 25px;" onclick="endGame()">結束遊戲</button>
         </div>
 
         <div id="ocean"></div>
+    </div>
+
+    <!-- 提示彈窗 (Pause Modal) -->
+    <div id="hint-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-title">💡 提示內容</div>
+            <p style="font-size: 18px; color: #555;">要配對的完整詞語是：</p>
+            <div id="hint-word-text" class="hint-word-display">開心</div>
+            <button class="btn" style="font-size: 20px; padding: 10px 30px;" onclick="closeHintModal()">返回遊戲</button>
+        </div>
     </div>
 </div>
 
@@ -491,6 +568,7 @@
     let timeLeft = 60;
     let timerInterval = null;
     let animationFrameId = null;
+    let isPaused = false; // 暫停狀態標記
     
     let currentTargetPair = { 
         word: "",
@@ -586,6 +664,7 @@
         score = 0;
         correctCount = 0;
         timeLeft = settings.time;
+        isPaused = false;
         document.getElementById('score').innerText = score;
         document.getElementById('correct-count').innerText = correctCount;
         document.getElementById('timer').innerText = timeLeft;
@@ -593,21 +672,41 @@
         showScreen('game-screen');
         nextQuestion();
 
-        clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            document.getElementById('timer').innerText = timeLeft;
-            if (timeLeft <= 0) {
-                endGame();
-            }
-        }, 1000);
+        startTimer();
 
         if (animationFrameId) cancelAnimationFrame(animationFrameId);
         gameLoop();
     }
 
+    function startTimer() {
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+            if (!isPaused) {
+                timeLeft--;
+                document.getElementById('timer').innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }
+        }, 1000);
+    }
+
+    // --- 提示與暫停功能 ---
+    function openHintModal() {
+        if (isPaused) return;
+        isPaused = true;
+        document.getElementById('hint-word-text').innerText = currentTargetPair.word;
+        document.getElementById('hint-modal').classList.remove('hidden');
+    }
+
+    function closeHintModal() {
+        document.getElementById('hint-modal').classList.add('hidden');
+        isPaused = false;
+    }
+
     function nextQuestion() {
         const randomWord = settings.words[Math.floor(Math.random() * settings.words.length)];
+        currentTargetPair.word = randomWord; // 記錄完整詞語供提示使用
         
         if (settings.advancedMode) {
             if (Math.random() < 0.5) {
@@ -628,7 +727,6 @@
         ocean.innerHTML = '';
         activeFishes = [];
 
-        // 計算正確答案數量（加入防呆：不得超過設定的魚數量上限）
         let numCorrect = 1;
         if (settings.correctFishMode === "1") {
             numCorrect = 1;
@@ -637,11 +735,9 @@
         } else if (settings.correctFishMode === "3") {
             numCorrect = 3;
         } else if (settings.correctFishMode === "random") {
-            // 隨機出現 1 到 魚的總數
             numCorrect = Math.floor(Math.random() * settings.fishCount) + 1;
         }
 
-        // 防呆保護：若設定的正確數量大於魚的總數，強制調整為總數量
         numCorrect = Math.min(numCorrect, settings.fishCount);
 
         const correctIndices = new Set();
@@ -737,23 +833,25 @@
     }
 
     function gameLoop() {
-        const oceanWidth = document.getElementById('ocean').clientWidth;
+        if (!isPaused) {
+            const oceanWidth = document.getElementById('ocean').clientWidth;
 
-        for (let i = activeFishes.length - 1; i >= 0; i--) {
-            const fish = activeFishes[i];
+            for (let i = activeFishes.length - 1; i >= 0; i--) {
+                const fish = activeFishes[i];
 
-            if (!fish.isDragging) {
-                fish.x += fish.speed;
-                fish.element.style.left = fish.x + 'px';
+                if (!fish.isDragging) {
+                    fish.x += fish.speed;
+                    fish.element.style.left = fish.x + 'px';
 
-                let isOut = false;
-                if (fish.direction > 0 && fish.x > oceanWidth + 50) isOut = true;
-                if (fish.direction < 0 && fish.x < -settings.fishSize - 50) isOut = true;
+                    let isOut = false;
+                    if (fish.direction > 0 && fish.x > oceanWidth + 50) isOut = true;
+                    if (fish.direction < 0 && fish.x < -settings.fishSize - 50) isOut = true;
 
-                if (isOut) {
-                    fish.element.remove();
-                    activeFishes.splice(i, 1);
-                    spawnSingleFish(fish.isCorrect);
+                    if (isOut) {
+                        fish.element.remove();
+                        activeFishes.splice(i, 1);
+                        spawnSingleFish(fish.isCorrect);
+                    }
                 }
             }
         }
@@ -767,6 +865,7 @@
         let startFishX, startFishY;
 
         const onPointerDown = (e) => {
+            if (isPaused) return; // 暫停時禁止拖曳
             e.preventDefault();
             fish.isDragging = true;
             el.classList.add('dragging');
@@ -787,7 +886,7 @@
         };
 
         const onPointerMove = (e) => {
-            if (!fish.isDragging) return;
+            if (!fish.isDragging || isPaused) return;
             if (e.touches) e.preventDefault();
 
             const pageX = e.touches ? e.touches[0].pageX : e.pageX;
@@ -824,7 +923,7 @@
             const basketEl = document.getElementById('basket');
             basketEl.classList.remove('drag-over');
 
-            if (checkCollision(el, basketEl)) {
+            if (!isPaused && checkCollision(el, basketEl)) {
                 handleFishInBasket(fish);
             }
         };
@@ -898,6 +997,7 @@
     function endGame() {
         clearInterval(timerInterval);
         cancelAnimationFrame(animationFrameId);
+        document.getElementById('hint-modal').classList.add('hidden');
         alert(`遊戲結束！\n總得分：${score} 分\n答對數量：${correctCount} 題`);
         showScreen('cover-screen');
     }
