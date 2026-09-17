@@ -365,7 +365,18 @@
 
             <div class="setting-item">
                 <label for="fish-count">海洋中魚的數量：</label>
-                <input type="number" id="fish-count" value="6" min="3" max="12">
+                <input type="number" id="fish-count" value="6" min="1" max="30">
+            </div>
+
+            <!-- 更新：4 個選項的下拉式選單 -->
+            <div class="setting-item">
+                <label for="correct-fish-mode">正確答案魚的數量：</label>
+                <select id="correct-fish-mode">
+                    <option value="1">固定 1 個正確答案</option>
+                    <option value="2">固定 2 個正確答案</option>
+                    <option value="3">固定 3 個正確答案</option>
+                    <option value="random" selected>隨機正確選項 (1 ~ 魚的總數)</option>
+                </select>
             </div>
 
             <div class="setting-item">
@@ -396,15 +407,6 @@
             </div>
 
             <div class="setting-item">
-                <label for="correct-fish-mode">正確答案魚的數量：</label>
-                <select id="correct-fish-mode">
-                    <option value="1">固定 1 條正確</option>
-                    <option value="2">固定 2 條正確</option>
-                    <option value="random" selected>隨機多條正確 (1~3 條)</option>
-                </select>
-            </div>
-
-            <div class="setting-item">
                 <label for="word-list">配對詞語題庫（請用逗號「,」或換行分隔）：</label>
                 <textarea id="word-list" rows="3">開心, 朋友, 學習, 太陽, 快樂, 學校, 努力, 成功</textarea>
             </div>
@@ -414,7 +416,6 @@
                 <input type="text" id="custom-wrong-chars" placeholder="例如：木, 本, 休, 未, 末">
             </div>
 
-            <!-- 新增：優先出現額外錯字選單 -->
             <div class="setting-item">
                 <label class="checkbox-label">
                     <input type="checkbox" id="prioritize-custom-wrong">
@@ -467,10 +468,10 @@
     let settings = {
         time: 60,
         fishCount: 6,
+        correctFishMode: "random",
         fishSize: 120,
         fishSpeedMultiplier: 1.0,
         advancedMode: false,
-        correctFishMode: "random",
         words: ["開心", "朋友", "學習", "太陽", "快樂", "學校", "努力", "成功"],
         customWrongChars: [],
         prioritizeCustomWrong: false
@@ -550,8 +551,8 @@
         if (sizeInput) settings.fishSize = sizeInput;
         if (speedInput) settings.fishSpeedMultiplier = speedInput;
 
-        settings.advancedMode = document.getElementById('advanced-mode').checked;
         settings.correctFishMode = document.getElementById('correct-fish-mode').value;
+        settings.advancedMode = document.getElementById('advanced-mode').checked;
         settings.prioritizeCustomWrong = document.getElementById('prioritize-custom-wrong').checked;
 
         // 解析自訂錯字
@@ -627,13 +628,21 @@
         ocean.innerHTML = '';
         activeFishes = [];
 
+        // 計算正確答案數量（加入防呆：不得超過設定的魚數量上限）
         let numCorrect = 1;
-        if (settings.correctFishMode === "2") {
-            numCorrect = Math.min(2, settings.fishCount);
+        if (settings.correctFishMode === "1") {
+            numCorrect = 1;
+        } else if (settings.correctFishMode === "2") {
+            numCorrect = 2;
+        } else if (settings.correctFishMode === "3") {
+            numCorrect = 3;
         } else if (settings.correctFishMode === "random") {
-            const maxAllowed = Math.min(3, Math.floor(settings.fishCount / 2) || 1);
-            numCorrect = Math.floor(Math.random() * maxAllowed) + 1;
+            // 隨機出現 1 到 魚的總數
+            numCorrect = Math.floor(Math.random() * settings.fishCount) + 1;
         }
+
+        // 防呆保護：若設定的正確數量大於魚的總數，強制調整為總數量
+        numCorrect = Math.min(numCorrect, settings.fishCount);
 
         const correctIndices = new Set();
         while (correctIndices.size < numCorrect) {
@@ -674,14 +683,11 @@
         if (isCorrect) {
             fishChar = currentTargetPair.targetChar;
         } else {
-            // 判斷是否開啟「優先出現額外錯字」且有設定額外錯字
             const validCustomWrong = settings.customWrongChars.filter(c => c !== currentTargetPair.targetChar);
             
             if (settings.prioritizeCustomWrong && validCustomWrong.length > 0) {
-                // 優先從自訂錯字中隨機抽取
                 fishChar = validCustomWrong[Math.floor(Math.random() * validCustomWrong.length)];
             } else {
-                // 否則從混合字庫中抽樣
                 do {
                     fishChar = combinedRandomChars[Math.floor(Math.random() * combinedRandomChars.length)];
                 } while (fishChar === currentTargetPair.targetChar);
