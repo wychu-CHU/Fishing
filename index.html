@@ -113,17 +113,17 @@
         /* 設定頁面 */
         .setting-box {
             background: rgba(255, 255, 255, 0.95);
-            padding: 30px 40px;
+            padding: 25px 40px;
             border-radius: 20px;
-            width: 80%;
-            max-height: 85%;
+            width: 85%;
+            max-height: 88%;
             overflow-y: auto;
             box-shadow: 0 10px 25px rgba(0,0,0,0.3);
             border: 3px solid #00acc1;
         }
 
         .setting-item {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             display: flex;
             flex-direction: column;
             align-items: flex-start;
@@ -133,12 +133,12 @@
             font-size: 18px;
             font-weight: bold;
             color: #006064;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .setting-item input, .setting-item select, .setting-item textarea {
             width: 100%;
-            padding: 10px 14px;
+            padding: 8px 12px;
             font-size: 16px;
             border: 2px solid #80deea;
             border-radius: 10px;
@@ -267,7 +267,6 @@
             margin-top: -10px;
         }
 
-        /* 剩餘目標提示文字 */
         .target-hint {
             font-size: 16px;
             font-weight: bold;
@@ -279,7 +278,6 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
         }
 
-        /* 反饋圖案 (剔 / 交叉) */
         .feedback-icon {
             position: absolute;
             right: -60px;
@@ -333,7 +331,7 @@
 
         .fish-text {
             position: absolute;
-            font-size: 28px;
+            font-size: 32px;
             font-weight: bold;
             color: #ffffff;
             text-shadow: 2px 2px 5px #000000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
@@ -358,7 +356,7 @@
     <!-- 設定頁 -->
     <div id="setting-screen" class="screen hidden">
         <div class="setting-box">
-            <h2 style="color: #006064; margin-bottom: 20px; text-align: center;">遊戲設定</h2>
+            <h2 style="color: #006064; margin-bottom: 15px; text-align: center;">遊戲設定</h2>
             
             <div class="setting-item">
                 <label for="game-time">遊戲時限（秒）：</label>
@@ -376,10 +374,20 @@
                     <option value="90">小 (90px)</option>
                     <option value="120" selected>中 (120px)</option>
                     <option value="150">大 (150px)</option>
+                    <option value="180">特大 (180px)</option>
                 </select>
             </div>
 
-            <!-- 進階難度開關 -->
+            <div class="setting-item">
+                <label for="fish-speed">魚移動速度：</label>
+                <select id="fish-speed">
+                    <option value="0.3">極慢</option>
+                    <option value="0.6">慢</option>
+                    <option value="1.0" selected>中 (標準)</option>
+                    <option value="1.8">快</option>
+                </select>
+            </div>
+
             <div class="setting-item">
                 <label class="checkbox-label">
                     <input type="checkbox" id="advanced-mode">
@@ -387,7 +395,6 @@
                 </label>
             </div>
 
-            <!-- 多正確答案設定 -->
             <div class="setting-item">
                 <label for="correct-fish-mode">正確答案魚的數量：</label>
                 <select id="correct-fish-mode">
@@ -399,7 +406,13 @@
 
             <div class="setting-item">
                 <label for="word-list">配對詞語題庫（請用逗號「,」或換行分隔）：</label>
-                <textarea id="word-list" rows="4">開心, 朋友, 學習, 太陽, 快樂, 學校, 努力, 成功</textarea>
+                <textarea id="word-list" rows="3">開心, 朋友, 學習, 太陽, 快樂, 學校, 努力, 成功</textarea>
+            </div>
+
+            <!-- 新增：自訂額外干擾字 -->
+            <div class="setting-item">
+                <label for="custom-wrong-chars">額外錯字／干擾字（可選，請用逗號「,」或空格分隔）：</label>
+                <input type="text" id="custom-wrong-chars" placeholder="例如：木, 本, 休, 未, 末（會與預設字庫合併產生）">
             </div>
 
             <div style="text-align: center; margin-top: 10px;">
@@ -416,7 +429,6 @@
                 <div>得分: <span id="score">0</span></div>
             </div>
 
-            <!-- 籃子與反饋圖案區 -->
             <div class="basket-wrapper">
                 <div id="basket" class="basket-container">
                     <img src="basket.jpg" alt="籃子" class="basket-img" onerror="this.style.display='none'">
@@ -424,12 +436,10 @@
                 </div>
                 <div id="target-hint" class="target-hint">剩餘正確：1 條</div>
                 
-                <!-- 反饋圖案：剔或交叉 (correct.jpg / wrong.jpg) -->
                 <img id="feedback-correct" src="correct.jpg" class="feedback-icon" alt="正確" onerror="this.style.display='none'">
                 <img id="feedback-wrong" src="wrong.jpg" class="feedback-icon" alt="錯誤" onerror="this.style.display='none'">
             </div>
 
-            <!-- 計數量牌子區塊 -->
             <div class="counter-card">
                 <img src="card.jpg" alt="牌子" class="counter-img" onerror="this.style.display='none'">
                 <div class="counter-content">
@@ -441,7 +451,6 @@
             <button class="btn" style="font-size: 18px; padding: 10px 25px;" onclick="endGame()">結束遊戲</button>
         </div>
 
-        <!-- 海洋區 -->
         <div id="ocean"></div>
     </div>
 </div>
@@ -452,13 +461,21 @@
         time: 60,
         fishCount: 6,
         fishSize: 120,
+        fishSpeedMultiplier: 1.0,
         advancedMode: false,
         correctFishMode: "random",
-        words: ["開心", "朋友", "學習", "太陽", "快樂", "學校", "努力", "成功"]
+        words: ["開心", "朋友", "學習", "太陽", "快樂", "學校", "努力", "成功"],
+        customWrongChars: []
     };
 
-    const fishImages = ['fish1.jpg', 'fish2.jpg', 'fish3.jpg', 'fish4.jpg', 'fish5.jpg'];
-    const randomChars = ["月", "日", "花", "草", "山", "水", "天", "地", "人", "木", "石", "風", "雨", "星", "海"];
+    const fishImages = [
+        'fish1.jpg', 'fish2.jpg', 'fish3.jpg', 'fish4.jpg', 'fish5.jpg',
+        'fish6.jpg', 'fish7.jpg', 'fish8.jpg', 'fish9.jpg', 'fish10.jpg'
+    ];
+    
+    // 預設常見中文字庫
+    const defaultRandomChars = ["月", "日", "花", "草", "山", "水", "天", "地", "人", "木", "石", "風", "雨", "星", "海"];
+    let combinedRandomChars = [...defaultRandomChars];
 
     let score = 0;
     let correctCount = 0;
@@ -466,7 +483,6 @@
     let timerInterval = null;
     let animationFrameId = null;
     
-    // 當前題目資訊
     let currentTargetPair = { 
         word: "",
         displayPrompt: "",
@@ -475,7 +491,7 @@
 
     let activeFishes = [];
 
-    // --- Web Audio API 音效產生器 ---
+    // Web Audio API 音效
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
     function playSound(type) {
@@ -517,14 +533,29 @@
         const timeInput = parseInt(document.getElementById('game-time').value);
         const countInput = parseInt(document.getElementById('fish-count').value);
         const sizeInput = parseInt(document.getElementById('fish-size').value);
+        const speedInput = parseFloat(document.getElementById('fish-speed').value);
         const wordsInput = document.getElementById('word-list').value;
+        const customWrongInput = document.getElementById('custom-wrong-chars').value;
 
         if (timeInput) settings.time = timeInput;
         if (countInput) settings.fishCount = countInput;
         if (sizeInput) settings.fishSize = sizeInput;
+        if (speedInput) settings.fishSpeedMultiplier = speedInput;
 
         settings.advancedMode = document.getElementById('advanced-mode').checked;
         settings.correctFishMode = document.getElementById('correct-fish-mode').value;
+
+        // 解析自訂錯字
+        if (customWrongInput.trim().length > 0) {
+            settings.customWrongChars = customWrongInput.split(/[,\s]/)
+                                                        .map(c => c.trim())
+                                                        .filter(c => c.length === 1);
+        } else {
+            settings.customWrongChars = [];
+        }
+
+        // 合併預設字庫與自訂錯字
+        combinedRandomChars = Array.from(new Set([...defaultRandomChars, ...settings.customWrongChars]));
 
         const parsedWords = wordsInput.split(/[,\n]/)
                                       .map(w => w.trim())
@@ -565,7 +596,6 @@
         gameLoop();
     }
 
-    // 切換題目
     function nextQuestion() {
         const randomWord = settings.words[Math.floor(Math.random() * settings.words.length)];
         
@@ -584,12 +614,10 @@
 
         document.getElementById('target-word').innerText = currentTargetPair.displayPrompt;
 
-        // 生成魚群
         const ocean = document.getElementById('ocean');
         ocean.innerHTML = '';
         activeFishes = [];
 
-        // 計算正確魚的數量
         let numCorrect = 1;
         if (settings.correctFishMode === "2") {
             numCorrect = Math.min(2, settings.fishCount);
@@ -611,13 +639,11 @@
         updateTargetHint();
     }
 
-    // 更新剩餘目標提示
     function updateTargetHint() {
         const remainingCorrect = activeFishes.filter(f => f.isCorrect).length;
         document.getElementById('target-hint').innerText = `剩餘正確：${remainingCorrect} 條`;
     }
 
-    // 產生單隻魚
     function spawnSingleFish(isCorrect = false) {
         const ocean = document.getElementById('ocean');
         const fishEl = document.createElement('div');
@@ -639,20 +665,23 @@
         if (isCorrect) {
             fishChar = currentTargetPair.targetChar;
         } else {
+            // 從合併後的字庫中抽樣
             do {
-                fishChar = randomChars[Math.floor(Math.random() * randomChars.length)];
+                fishChar = combinedRandomChars[Math.floor(Math.random() * combinedRandomChars.length)];
             } while (fishChar === currentTargetPair.targetChar);
         }
 
         const textEl = document.createElement('div');
         textEl.className = 'fish-text';
+        textEl.style.fontSize = Math.round(settings.fishSize * 0.26) + 'px';
         textEl.innerText = fishChar;
 
         fishEl.appendChild(img);
         fishEl.appendChild(textEl);
 
         const direction = Math.random() < 0.5 ? 1 : -1;
-        const speed = (Math.random() * 1.2 + 1.2) * direction;
+        const baseSpeed = (Math.random() * 1.0 + 1.0) * settings.fishSpeedMultiplier;
+        const speed = baseSpeed * direction;
         
         const oceanWidth = ocean.clientWidth;
         const oceanHeight = ocean.clientHeight;
@@ -684,7 +713,6 @@
         activeFishes.push(fishData);
     }
 
-    // 海洋 Loop
     function gameLoop() {
         const oceanWidth = document.getElementById('ocean').clientWidth;
 
@@ -702,8 +730,6 @@
                 if (isOut) {
                     fish.element.remove();
                     activeFishes.splice(i, 1);
-
-                    // 游出畫面的魚如果是正確答案，補充一條正確答案，確保不會卡關
                     spawnSingleFish(fish.isCorrect);
                 }
             }
@@ -809,10 +835,8 @@
         }, 800);
     }
 
-    // 魚抓入籃子處理
     function handleFishInBasket(fish) {
         if (fish.isCorrect) {
-            // 答對了！
             score += 10;
             correctCount += 1;
             document.getElementById('score').innerText = score;
@@ -821,30 +845,24 @@
             playSound('correct');
             showFeedback('correct');
 
-            // 移除該條正確的魚
             fish.element.remove();
             const idx = activeFishes.indexOf(fish);
             if (idx > -1) activeFishes.splice(idx, 1);
 
-            // 檢查海洋中是否還有其他「正確」的魚
             const remainingCorrect = activeFishes.filter(f => f.isCorrect).length;
             
             if (remainingCorrect > 0) {
-                // 如果還有正確答案，僅更新剩餘數量提示，不換題
                 updateTargetHint();
             } else {
-                // 當所有正確答案都被抓完時，才跳轉下一題！
                 nextQuestion();
             }
         } else {
-            // 答錯了！
             timeLeft = Math.max(0, timeLeft - 3);
             document.getElementById('timer').innerText = timeLeft;
 
             playSound('wrong');
             showFeedback('wrong');
 
-            // 答錯的魚消失，並隨機補回一條「干擾魚」
             fish.element.remove();
             const idx = activeFishes.indexOf(fish);
             if (idx > -1) activeFishes.splice(idx, 1);
