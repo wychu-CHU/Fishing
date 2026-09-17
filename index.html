@@ -409,10 +409,17 @@
                 <textarea id="word-list" rows="3">開心, 朋友, 學習, 太陽, 快樂, 學校, 努力, 成功</textarea>
             </div>
 
-            <!-- 新增：自訂額外干擾字 -->
             <div class="setting-item">
                 <label for="custom-wrong-chars">額外錯字／干擾字（可選，請用逗號「,」或空格分隔）：</label>
-                <input type="text" id="custom-wrong-chars" placeholder="例如：木, 本, 休, 未, 末（會與預設字庫合併產生）">
+                <input type="text" id="custom-wrong-chars" placeholder="例如：木, 本, 休, 未, 末">
+            </div>
+
+            <!-- 新增：優先出現額外錯字選單 -->
+            <div class="setting-item">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="prioritize-custom-wrong">
+                    優先出現額外錯字／干擾字（開啟後會盡量出現上面設定的錯字）
+                </label>
             </div>
 
             <div style="text-align: center; margin-top: 10px;">
@@ -465,7 +472,8 @@
         advancedMode: false,
         correctFishMode: "random",
         words: ["開心", "朋友", "學習", "太陽", "快樂", "學校", "努力", "成功"],
-        customWrongChars: []
+        customWrongChars: [],
+        prioritizeCustomWrong: false
     };
 
     const fishImages = [
@@ -544,6 +552,7 @@
 
         settings.advancedMode = document.getElementById('advanced-mode').checked;
         settings.correctFishMode = document.getElementById('correct-fish-mode').value;
+        settings.prioritizeCustomWrong = document.getElementById('prioritize-custom-wrong').checked;
 
         // 解析自訂錯字
         if (customWrongInput.trim().length > 0) {
@@ -665,10 +674,18 @@
         if (isCorrect) {
             fishChar = currentTargetPair.targetChar;
         } else {
-            // 從合併後的字庫中抽樣
-            do {
-                fishChar = combinedRandomChars[Math.floor(Math.random() * combinedRandomChars.length)];
-            } while (fishChar === currentTargetPair.targetChar);
+            // 判斷是否開啟「優先出現額外錯字」且有設定額外錯字
+            const validCustomWrong = settings.customWrongChars.filter(c => c !== currentTargetPair.targetChar);
+            
+            if (settings.prioritizeCustomWrong && validCustomWrong.length > 0) {
+                // 優先從自訂錯字中隨機抽取
+                fishChar = validCustomWrong[Math.floor(Math.random() * validCustomWrong.length)];
+            } else {
+                // 否則從混合字庫中抽樣
+                do {
+                    fishChar = combinedRandomChars[Math.floor(Math.random() * combinedRandomChars.length)];
+                } while (fishChar === currentTargetPair.targetChar);
+            }
         }
 
         const textEl = document.createElement('div');
